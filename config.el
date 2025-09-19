@@ -74,3 +74,17 @@
 ;;
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
+
+(use-package! aidermacs
+  :config
+  ;; Set default model to attempt Kagi FastGPT (may require Aider config tweaks)
+  (setq aidermacs-default-model "fastgpt")
+  ;; Enable Aidermacs mode globally (or per buffer as needed)
+  (aidermacs-mode 1)
+  ;; Optional: Custom function to run Aidermacs with Kagi backend
+  (defun my-aidermacs-with-kagi ()
+    (interactive)
+    (let ((gptel-backend (gptel-get-backend "Kagi")))
+      (aidermacs-run-command)))
+  ;; Bind to a key if desired, e.g., (map! :leader "a k" #'my-aidermacs-with-kagi)
+  )
