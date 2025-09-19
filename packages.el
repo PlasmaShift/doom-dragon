@@ -49,3 +49,4 @@
 ;; (unpin! t)
 
 (package! aidermacs :recipe (:host github :repo "MatthewZMD/aidermacs"))
+(package! exec-path-from-shell)

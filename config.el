@@ -75,6 +75,8 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
+(exec-path-from-shell-initialize)
+
 (use-package! aidermacs
   :config
   ;; Set default model to attempt Kagi FastGPT (may require Aider config tweaks)
