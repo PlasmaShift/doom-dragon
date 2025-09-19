@@ -88,3 +88,17 @@
       (aidermacs-run-command)))
   ;; Bind to a key if desired, e.g., (map! :leader "a k" #'my-aidermacs-with-kagi)
   )
+
+(use-package! gptel
+  :config
+  ;; Set up Kagi FastGPT backend using env var
+  (gptel-make-kagi "Kagi" :key (lambda () (getenv "KAGI_API_KEY")))
+
+  ;; Set up Gemini backend using env var
+  (gptel-make-gemini "Gemini" :key (getenv "GEMINI_API_KEY") :stream t)
+
+  ;; Set Kagi FastGPT as the default backend
+  (setq gptel-backend (gptel-get-backend "Kagi"))
+
+  ;; Optional: Enable gptel mode for keybindings
+  (gptel-mode 1))
