@@ -98,7 +98,11 @@
   (gptel-make-gemini "Gemini" :key (getenv "GEMINI_API_KEY") :stream t)
 
   ;; Set Kagi FastGPT as the default backend
-  (setq gptel-backend (gptel-get-backend "Kagi"))
+  (setopt gptel-backend (gptel-get-backend "Kagi"))
+  (setopt gptel-default-mode "org-mode")
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
 
   ;; Optional: Enable gptel mode for keybindings
-  (gptel-mode 1))
+  ;; (gptel-mode 1)
+  )
