@@ -38,6 +38,21 @@
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type t)
 
+(defun append-message-to-init-config-debug (string)
+  "Append a message to a new line in the '*init-config-debug*' buffer."
+  (save-window-excursion
+    (if (get-buffer "*init-config-debug*")
+        (progn
+          (with-current-buffer (get-buffer "*init-config-debug*")
+            (goto-char (point-max))
+            (newline)
+            (insert string)))
+      (progn
+        (switch-to-buffer (get-buffer-create "*init-config-debug*"))
+        (insert string)))))
+
+(append-message-to-init-config-debug "Config loaded")
+
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
@@ -108,6 +123,9 @@
   ;; Optional: Enable gptel mode for keybindings
   ;; (gptel-mode 1)
   )
+(append-message-to-init-config-debug "aider loaded")
+
+
 (use-package! denote
   :demand t
   :config
@@ -125,6 +143,7 @@
 ;;   (("C-c p f" . consult-project-extra-find)
 ;;    ("C-c p o" . consult-project-extra-find-other-window)))
 
+(append-message-to-init-config-debug "denote Loaded")
 
 (use-package! consult-notes
   :demand t
