@@ -108,3 +108,37 @@
   ;; Optional: Enable gptel mode for keybindings
   ;; (gptel-mode 1)
   )
+(use-package! denote
+  :demand t
+  :config
+  (cond
+   ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+    (setq denote-directory (expand-file-name "R:/docs/denote/denote")))
+   ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+    (setq denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
+   (t (setq denote-directory (expand-file-name "~/doc/denote/denote")))))
+
+
+(use-package consult-project-extra
+  :ensure (consult-project-extra :type git :host github :repo "Qkessler/consult-project-extra")
+  :bind
+  (("C-c p f" . consult-project-extra-find)
+   ("C-c p o" . consult-project-extra-find-other-window)))
+
+
+(use-package! consult-notes
+  :demand t
+  :after denote
+  :init
+  (setq consult-notes-file-dir-sources
+  	`(("Denote Notes"  ?d ,(denote-directory))
+  	  )))
+
+(use-package! consult-denote
+  :bind
+  (("C-c n f" . consult-denote-find)
+   ("C-c n g" . consult-denote-grep))
+  :config
+  (consult-denote-mode 1)
+  (blackout 'consult-denote-mode))
+
