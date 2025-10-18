@@ -131,10 +131,10 @@
   :config
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
-    (setq denote-directory (expand-file-name "R:/docs/denote/denote")))
+    (setopt denote-directory (expand-file-name "R:/docs/denote/denote")))
    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
-    (setq denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
-   (t (setq denote-directory (expand-file-name "~/doc/denote/denote")))))
+    (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
+   (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
 
 
 ;; (use-package consult-project-extra
