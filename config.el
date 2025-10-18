@@ -108,8 +108,8 @@
   ;; Optional: Enable gptel mode for keybindings
   ;; (gptel-mode 1)
   )
-(use-package denote
-  ;; :demand t
+(use-package! denote
+  :demand t
   :config
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
