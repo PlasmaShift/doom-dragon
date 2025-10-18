@@ -116,7 +116,7 @@
 
   ;; Set Kagi FastGPT as the default backend
   (setopt gptel-backend (gptel-get-backend "Kagi"))
-  (setopt gptel-default-mode "org-mode")
+  (setopt gptel-default-mode 'org-mode)
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
 
