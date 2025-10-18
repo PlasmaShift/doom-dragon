@@ -93,6 +93,25 @@
 
 (exec-path-from-shell-initialize)
 
+;; user-emacs-directory "/home/plasmastrike/.cache/doom/nix" why
+
+;; (use-package no-littering
+;;   :demand t
+;;   :config
+;;   (require 'no-littering))
+
+(use-package custom
+  :ensure nil
+  :no-require t
+  :config
+  ;; (setopt custom-file (expand-file-name "custom.el" user-emacs-directory)) :; TODO fix user-emacs-directory
+  (setopt custom-file (expand-file-name "custom.el" "~/.config/doom-dragon/"))
+  (when (file-exists-p custom-file)
+    (load custom-file)))
+
+
+
+
 ;; (use-package! aidermacs
 ;;   :config
 ;;   ;; Set default model to attempt Kagi FastGPT (may require Aider config tweaks)

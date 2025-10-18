@@ -50,6 +50,7 @@
 
 (package! aidermacs :recipe (:host github :repo "MatthewZMD/aidermacs"))
 (package! exec-path-from-shell)
+(package! no-littering)
 (package! dired-preview)
 (package! denote)
 (package! denote-org)
