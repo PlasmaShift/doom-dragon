@@ -92,19 +92,19 @@
 
 (exec-path-from-shell-initialize)
 
-(use-package! aidermacs
-  :config
-  ;; Set default model to attempt Kagi FastGPT (may require Aider config tweaks)
-  (setq aidermacs-default-model "fastgpt")
-  ;; Enable Aidermacs mode globally (or per buffer as needed)
-  (aidermacs-mode 1)
-  ;; Optional: Custom function to run Aidermacs with Kagi backend
-  (defun my-aidermacs-with-kagi ()
-    (interactive)
-    (let ((gptel-backend (gptel-get-backend "Kagi")))
-      (aidermacs-run-command)))
-  ;; Bind to a key if desired, e.g., (map! :leader "a k" #'my-aidermacs-with-kagi)
-  )
+;; (use-package! aidermacs
+;;   :config
+;;   ;; Set default model to attempt Kagi FastGPT (may require Aider config tweaks)
+;;   (setq aidermacs-default-model "fastgpt")
+;;   ;; Enable Aidermacs mode globally (or per buffer as needed)
+;;   (aidermacs-mode 1)
+;;   ;; Optional: Custom function to run Aidermacs with Kagi backend
+;;   (defun my-aidermacs-with-kagi ()
+;;     (interactive)
+;;     (let ((gptel-backend (gptel-get-backend "Kagi")))
+;;       (aidermacs-run-command)))
+;;   ;; Bind to a key if desired, e.g., (map! :leader "a k" #'my-aidermacs-with-kagi)
+;;   )
 
 (use-package! gptel
   :config
@@ -161,3 +161,4 @@
   (consult-denote-mode 1)
   (blackout 'consult-denote-mode))
 
+(append-message-to-init-config-debug "Config finished")
