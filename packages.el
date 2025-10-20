@@ -63,4 +63,5 @@
 (package! citar-denote)
 (package! consult-notes)
 (package! denote-menu)
+(package! eldoc-box)
 (package! epkg)
