@@ -65,3 +65,4 @@
 (package! denote-menu)
 (package! eldoc-box)
 (package! epkg)
+(package! kdl-mode)

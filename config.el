@@ -110,6 +110,8 @@
     (load custom-file)))
 
 
+(use-package! kdl-mode
+  :mode "\\.kdl\\'")
 
 
 ;; (use-package! aidermacs
