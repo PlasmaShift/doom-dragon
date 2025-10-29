@@ -184,6 +184,6 @@
    ("C-c n g" . consult-denote-grep))
   :config
   (consult-denote-mode 1)
-  (blackout 'consult-denote-mode))
+  ;; (blackout 'consult-denote-mode))
 
-(append-message-to-init-config-debug "Config finished")
+  (append-message-to-init-config-debug "Config finished")
