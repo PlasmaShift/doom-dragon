@@ -66,3 +66,5 @@
 (package! eldoc-box)
 (package! epkg)
 (package! kdl-mode)
+(package! diredfl
+  :disable t)
