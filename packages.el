@@ -68,6 +68,6 @@
 (package! kdl-mode)
 (package! diredfl
   :disable t)
-(package! org-appear
-  :disable t)
-(package! org-expose-emphasis-markers)
+;; (package! org-appear
+;;   :disable t)
+;; (package! org-expose-emphasis-markers)
