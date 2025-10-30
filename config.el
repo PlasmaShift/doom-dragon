@@ -153,6 +153,10 @@
 
 (use-package! denote
   :demand t
+  :custom
+  (denote-sort-keywords t)
+  :hook
+  (dired-mode . denote-dired-mode)
   :config
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
