@@ -190,4 +190,20 @@
   (consult-denote-mode 1)
   ;; (blackout 'consult-denote-mode))
 
+
+  (use-package! org-expose-emphasis-markers
+    ;; :hook
+    ;; (org-mode . )
+    :config
+    ;; 1. make sure `org-hide-emphasis-markers' is true
+    (setq org-hide-emphasis-markers t)
+
+    ;; 2. (optional) set the exposing scope, default value is 'item
+    (setq org-expose-emphasis-markers-type 'paragraph)
+    (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers 'paragraph)))
+    ;; 3. turn on the mode
+    ;; (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers-mode t)))
+    )
+
+  
   (append-message-to-init-config-debug "Config finished")
