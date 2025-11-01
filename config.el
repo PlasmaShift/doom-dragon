@@ -56,7 +56,7 @@
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
+(setopt org-directory "~/org/")
 
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
@@ -151,6 +151,24 @@
   :config
   (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t))
 
+;; (use-package! denote
+;;   :demand t
+;;   :custom
+;;   (denote-sort-keywords t)
+;;   :hook
+;;   (dired-mode . denote-dired-mode)
+;;   :config
+;;   (cond
+;;    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+;;     (setopt denote-directory (expand-file-name "R:/docs/denote/denote")))
+;;    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+;;     (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
+;;    (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
+
+
+
+
+
 (use-package! denote
   :demand t
   :custom
@@ -160,10 +178,62 @@
   :config
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
-    (setopt denote-directory (expand-file-name "R:/docs/denote/denote")))
+    (setopt denote-directory (expand-file-name "R:/docs/denote/denote"))
+    (setopt denote-journal-directory (expand-file-name "R:/docs/denote/journal")))  ;; Journal as subdir (adjust if needed)
    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
-    (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
-   (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
+    (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/"))
+    (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))  ;; Journal as subdir (adjust if needed)
+   (t (setopt denote-directory (expand-file-name "~/doc/denote/denote"))
+      (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))  ;; Journal as subdir (adjust if needed)
+
+;; Separate block for Denote Journal (as requested)
+(use-package! denote-journal
+  :after denote
+  :config
+  ;; Journal-specific settings: Use daily journals with timed headings
+  (setopt denote-journal-extras-title-format 'day)  ;; Journals named by date (e.g., 20240920.org)
+  (setopt denote-journal-extras-hook '(denote-journal-extras-new-or-existing-entry))  ;; Auto-create if needed
+  ;; No custom function needed; we'll use org-capture to append
+  )
+
+;; Org-capture templates for Denote (inspired by Prot's denote-org-capture)
+(after! org-capture
+  (setopt org-capture-templates
+          '(("d" "Denote: New note (create or edit)" entry
+             (file+headline denote-directory "New Note")
+             "* %?\n%U\n\n" :empty-lines 1)  ;; Simple template for new/edit note
+            ("j" "Denote: Journal entry (append timed heading)" entry
+             (file+function (lambda () (denote-journal-extras-new-or-existing-entry))  ;; Get/create today's journal file in ~/doc/denote/journal
+                            (lambda () (goto-char (point-max)) (unless (bolp) (newline))))  ;; Position at end for append
+             "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))  ;; Timed heading + content
+
+;; Denote bindings (mimicking Doom's org-roam style under SPC n r, but for Denote)
+;; Overwriting any org-roam bindings (e.g., SPC n r -> SPC n d for Denote)
+;; Direct bindings (no popup)
+(map! :leader
+      (:prefix ("n d" . "Denote")
+               "c" #'denote-org-capture               :desc "Create/edit note"      ;; SPC n d c: New/edit note
+               "j" (lambda () (interactive) (org-capture nil "j")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
+               "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes
+               "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search
+               "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link to note
+               "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks
+
+;; Duplicate bindings with Niri popup (commented out; uncomment to use)
+;; Uses emacsclient for a floating frame (as per Prot's blog)
+;; (map! :leader
+;;       (:prefix ("n d" . "Denote")
+;;        "c" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(denote-org-capture)")) :desc "Create/edit note"      ;; SPC n d c: Popup for new/edit note
+;;        "j" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(org-capture nil \"j\")")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
+;;        "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes (no popup needed)
+;;        "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search (no popup needed)
+;;        "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link (no popup needed)
+;;        "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks (no popup needed)
+
+
+
+
+
 
 
 ;; (use-package consult-project-extra
@@ -178,9 +248,9 @@
   :demand t
   :after denote
   :init
-  (setq consult-notes-file-dir-sources
-  	`(("Denote Notes"  ?d ,(denote-directory))
-  	  )))
+  (setopt consult-notes-file-dir-sources
+  	  `(("Denote Notes"  ?d ,(denote-directory))
+  	    )))
 
 (use-package! consult-denote
   :bind
@@ -189,21 +259,21 @@
   :config
   (consult-denote-mode 1)
   ;; (blackout 'consult-denote-mode))
+  )
+
+;; (use-package! org-expose-emphasis-markers
+;;   ;; :hook
+;;   ;; (org-mode . )
+;;   :config
+;;   ;; 1. make sure `org-hide-emphasis-markers' is true
+;;   (setopt org-hide-emphasis-markers t)
+
+;;   ;; 2. (optional) set the exposing scope, default value is 'item
+;;   (setopt org-expose-emphasis-markers-type 'paragraph)
+;;   (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers 'paragraph)))
+;;   ;; 3. turn on the mode
+;;   ;; (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers-mode t)))
+;;   )
 
 
-  ;; (use-package! org-expose-emphasis-markers
-  ;;   ;; :hook
-  ;;   ;; (org-mode . )
-  ;;   :config
-  ;;   ;; 1. make sure `org-hide-emphasis-markers' is true
-  ;;   (setq org-hide-emphasis-markers t)
-
-  ;;   ;; 2. (optional) set the exposing scope, default value is 'item
-  ;;   (setq org-expose-emphasis-markers-type 'paragraph)
-  ;;   (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers 'paragraph)))
-  ;;   ;; 3. turn on the mode
-  ;;   ;; (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers-mode t)))
-  ;;   )
-
-  
-  (append-message-to-init-config-debug "Config finished")
+(append-message-to-init-config-debug "Config finished")
