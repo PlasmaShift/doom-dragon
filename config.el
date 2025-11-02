@@ -170,7 +170,7 @@
 
 
 (use-package! denote
-  :demand t  ;; Force-load Denote immediately to avoid commandp errors
+  :demand t
   :custom
   (denote-sort-keywords t)
   :hook
@@ -185,56 +185,117 @@
 
 ;; Separate block for Denote Journal (as requested)
 (use-package! denote-journal
-  :after denote  ;; Ensure journal loads after main Denote to avoid issues
-  :demand t  ;; Force-load to make functions available immediately
+  :after denote
+  :demand t
   :config
   ;; Journal-specific settings: Use daily journals with timed headings
-  (setopt denote-journal-title-format 'day)  ;; Journals named by date (e.g., 20240920.org)
-  (setopt denote-journal-hook '(denote-journal-new-or-existing-entry))  ;; Auto-create if needed
-  ;; Set journal directory conditionally, matching denote-directory (with your comments)
+  (setopt denote-journal-title-format 'day)
+  (setopt denote-journal-hook '(denote-journal-new-or-existing-entry))
+  ;; Set journal directory conditionally, matching denote-directory
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
-    (setopt denote-journal-directory (expand-file-name "R:/docs/denote/journal")))  ;; Journal as subdir (adjust if needed)
+    (setopt denote-journal-directory (expand-file-name "R:/docs/denote/journal")))
    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
-    (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))  ;; Journal as subdir (adjust if needed)
-   (t (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))  ;; Journal as subdir (adjust if needed)
-
-(require 'denote)
-;; Org-capture templates for Denote (inspired by Prot's denote-org-capture)
+    (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))
+   (t (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))
 
 (after! org-capture
   (setopt org-capture-templates
-          '(("d" "Denote: New note (create or edit)" plain  ;; Use 'plain' for Denote's dynamic note creation
-             (function denote-org-capture)  ;; Calls Denote's function to create/edit dynamically
-             "%?" :empty-lines 1)  ;; Simple template: prompts for title/keywords, adds content
+          '(("d" "Denote: New note (create or edit)" plain
+             (function denote-org-capture)
+             "%?" :empty-lines 1)
             ("j" "Denote: Journal entry (append timed heading)" entry
-             (file+function (lambda () (denote-journal-new-or-existing-entry))  ;; Get/create today's journal file in journal dir
-                            (lambda () (goto-char (point-max)) (unless (bolp) (newline))))  ;; Position at end for append (hides rest of journal during capture)
-             "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))  ;; Timed heading + content
+             (file+function (lambda () (denote-journal-new-or-existing-entry))
+                            ;; This positions the cursor at the end, hiding the rest of the journal
+                            (lambda () (goto-char (point-max)) (unless (bolp) (newline))))
+             "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))
 
-;; ... (your other use-package! blocks, e.g., consult-notes, consult-denote)
-
-;; Denote bindings (mimicking Doom's org-roam style under SPC n d, but for Denote)
-;; Placed outside after! for immediate evaluation; overwrites org-roam bindings
+;; Denote bindings that overwrite org-roam's under SPC n d
+;; These are for use within a normal Emacs session.
 (map! :leader
       (:prefix ("n d" . "Denote")
-               "c" #'denote-org-capture               :desc "Create/edit note"      ;; SPC n d c: New/edit note
-               "j" (lambda () (interactive) (org-capture nil "j")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
-               "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes
-               "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search
-               "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link to note
-               "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks
+               "c" #'denote-org-capture               :desc "Create/edit note"
+               "j" (lambda () (interactive) (org-capture nil "j")) :desc "Journal entry"
+               "f" #'consult-denote-find              :desc "Find note"
+               "g" #'consult-denote-grep              :desc "Grep in notes"
+               "l" #'denote-link                      :desc "Insert link"
+               "b" #'denote-backlinks                 :desc "Backlinks"))
 
-;; Duplicate bindings with Niri popup (commented out; uncomment to use)
-;; Uses emacsclient for a floating frame (as per Prot's blog)
+
+
+
+
+
+
+
+
+
+;; (use-package! denote
+;;   :demand t  ;; Force-load Denote immediately to avoid commandp errors
+;;   :custom
+;;   (denote-sort-keywords t)
+;;   :hook
+;;   (dired-mode . denote-dired-mode)
+;;   :config
+;;   (cond
+;;    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+;;     (setopt denote-directory (expand-file-name "R:/docs/denote/denote")))
+;;    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+;;     (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
+;;    (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
+
+;; ;; Separate block for Denote Journal (as requested)
+;; (use-package! denote-journal
+;;   :after denote  ;; Ensure journal loads after main Denote to avoid issues
+;;   :demand t  ;; Force-load to make functions available immediately
+;;   :config
+;;   ;; Journal-specific settings: Use daily journals with timed headings
+;;   (setopt denote-journal-title-format 'day)  ;; Journals named by date (e.g., 20240920.org)
+;;   (setopt denote-journal-hook '(denote-journal-new-or-existing-entry))  ;; Auto-create if needed
+;;   ;; Set journal directory conditionally, matching denote-directory (with your comments)
+;;   (cond
+;;    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+;;     (setopt denote-journal-directory (expand-file-name "R:/docs/denote/journal")))  ;; Journal as subdir (adjust if needed)
+;;    ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+;;     (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))  ;; Journal as subdir (adjust if needed)
+;;    (t (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))  ;; Journal as subdir (adjust if needed)
+
+;; (require 'denote)
+;; ;; Org-capture templates for Denote (inspired by Prot's denote-org-capture)
+
+;; (after! org-capture
+;;   (setopt org-capture-templates
+;;           '(("d" "Denote: New note (create or edit)" plain  ;; Use 'plain' for Denote's dynamic note creation
+;;              (function denote-org-capture)  ;; Calls Denote's function to create/edit dynamically
+;;              "%?" :empty-lines 1)  ;; Simple template: prompts for title/keywords, adds content
+;;             ("j" "Denote: Journal entry (append timed heading)" entry
+;;              (file+function (lambda () (denote-journal-new-or-existing-entry))  ;; Get/create today's journal file in journal dir
+;;                             (lambda () (goto-char (point-max)) (unless (bolp) (newline))))  ;; Position at end for append (hides rest of journal during capture)
+;;              "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))  ;; Timed heading + content
+
+;; ;; ... (your other use-package! blocks, e.g., consult-notes, consult-denote)
+
+;; ;; Denote bindings (mimicking Doom's org-roam style under SPC n d, but for Denote)
+;; ;; Placed outside after! for immediate evaluation; overwrites org-roam bindings
 ;; (map! :leader
 ;;       (:prefix ("n d" . "Denote")
-;;        "c" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(denote-org-capture)")) :desc "Create/edit note"      ;; SPC n d c: Popup for new/edit note
-;;        "j" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(org-capture nil \"j\")")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
-;;        "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes (no popup needed)
-;;        "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search (no popup needed)
-;;        "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link (no popup needed)
-;;        "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks (no popup needed)
+;;                "c" #'denote-org-capture               :desc "Create/edit note"      ;; SPC n d c: New/edit note
+;;                "j" (lambda () (interactive) (org-capture nil "j")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
+;;                "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes
+;;                "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search
+;;                "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link to note
+;;                "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks
+
+;; ;; Duplicate bindings with Niri popup (commented out; uncomment to use)
+;; ;; Uses emacsclient for a floating frame (as per Prot's blog)
+;; ;; (map! :leader
+;; ;;       (:prefix ("n d" . "Denote")
+;; ;;        "c" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(denote-org-capture)")) :desc "Create/edit note"      ;; SPC n d c: Popup for new/edit note
+;; ;;        "j" (lambda () (interactive) (call-process "emacsclient" nil nil nil "-c" "-e" "(org-capture nil \"j\")")) :desc "Journal entry"        ;; SPC n d j: Append timed journal entry
+;; ;;        "f" #'consult-denote-find              :desc "Find note"             ;; SPC n d f: Search notes (no popup needed)
+;; ;;        "g" #'consult-denote-grep              :desc "Grep in notes"         ;; SPC n d g: Grep search (no popup needed)
+;; ;;        "l" #'denote-link                      :desc "Insert link"           ;; SPC n d l: Insert link (no popup needed)
+;; ;;        "b" #'denote-backlinks                 :desc "Backlinks"))           ;; SPC n d b: Show backlinks (no popup needed)
 
 
 
