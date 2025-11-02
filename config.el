@@ -210,6 +210,15 @@
                             (lambda () (goto-char (point-max)) (unless (bolp) (newline))))
              "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))
 
+
+(with-eval-after-load 'org-capture
+  (add-to-list 'org-capture-templates
+               '("k" "Journal" entry
+                 (file denote-journal-path-to-new-or-existing-entry)
+                 "* %U %?\n%i\n%a"
+                 :kill-buffer t
+                 :empty-lines 1)))
+
 ;; Denote bindings that overwrite org-roam's under SPC n d
 ;; These are for use within a normal Emacs session.
 (map! :leader
