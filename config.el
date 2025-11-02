@@ -189,8 +189,8 @@
   :demand t  ;; Force-load to make functions available immediately
   :config
   ;; Journal-specific settings: Use daily journals with timed headings
-  (setopt denote-journal-extras-title-format 'day)  ;; Journals named by date (e.g., 20240920.org)
-  (setopt denote-journal-extras-hook '(denote-journal-extras-new-or-existing-entry))  ;; Auto-create if needed
+  (setopt denote-journal-title-format 'day)  ;; Journals named by date (e.g., 20240920.org)
+  (setopt denote-journal-hook '(denote-journal-new-or-existing-entry))  ;; Auto-create if needed
   ;; Set journal directory conditionally, matching denote-directory (with your comments)
   (cond
    ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
@@ -208,7 +208,7 @@
              (function denote-org-capture)  ;; Calls Denote's function to create/edit dynamically
              "%?" :empty-lines 1)  ;; Simple template: prompts for title/keywords, adds content
             ("j" "Denote: Journal entry (append timed heading)" entry
-             (file+function (lambda () (denote-journal-extras-new-or-existing-entry))  ;; Get/create today's journal file in journal dir
+             (file+function (lambda () (denote-journal-new-or-existing-entry))  ;; Get/create today's journal file in journal dir
                             (lambda () (goto-char (point-max)) (unless (bolp) (newline))))  ;; Position at end for append (hides rest of journal during capture)
              "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))  ;; Timed heading + content
 
