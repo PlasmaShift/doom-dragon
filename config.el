@@ -199,6 +199,7 @@
     (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))  ;; Journal as subdir (adjust if needed)
    (t (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))  ;; Journal as subdir (adjust if needed)
 
+(require 'denote)
 ;; Org-capture templates for Denote (inspired by Prot's denote-org-capture)
 (after! org-capture
   (setopt org-capture-templates
