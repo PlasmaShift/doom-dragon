@@ -166,7 +166,7 @@
 ;;    (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
 
 
-
+(use-package dired-rsync)
 
 
 (use-package! denote

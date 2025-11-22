@@ -66,6 +66,7 @@
 (package! eldoc-box)
 (package! epkg)
 (package! kdl-mode)
+(package! dired-rsync)
 (package! diredfl
   :disable t)
 ;; (package! org-appear
