@@ -235,8 +235,8 @@
 
 
 
-
-
+(require 'calfw-org)
+(require 'calfw-blocks)
 
 
 ;; (use-package! denote
