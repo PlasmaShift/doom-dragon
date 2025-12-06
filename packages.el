@@ -68,7 +68,7 @@
 (package! kdl-mode)
 (package! dired-rsync)
 (package! calfw)
-(package! calfw-blocks)
+;; (package! calfw-blocks)
 (package! diredfl
   :disable t)
 ;; (package! org-appear
