@@ -67,8 +67,10 @@
 (package! epkg)
 (package! kdl-mode)
 (package! dired-rsync)
+(package! emacs-reader)
 (package! calfw)
 ;; (package! calfw-blocks)
+(package! org-window-habit)
 (package! diredfl
   :disable t)
 ;; (package! org-appear
