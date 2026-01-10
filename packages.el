@@ -84,7 +84,7 @@
 ;; ;; (package! reader  ; or emacs-reader
 ;;   :recipe (:host codeberg :repo divyaranjan/emacs-reader))
 
-(package! org-window-habit)
+;; (package! org-window-habit)
 (package! diredfl
   :disable t)
 ;; (package! org-appear
