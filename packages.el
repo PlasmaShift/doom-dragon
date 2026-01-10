@@ -70,10 +70,12 @@
 (package! emacs-reader)
 (package! calfw)
 ;; (package! calfw-blocks)
-(package! calfw-blocks
-  :recipe (:host github :repo haji-ali/calfw-blocks
-           :pin "87937b7c7523b6d314bf9e21310924c94f182954"))
+;; (package! calfw-blocks
+;;   :recipe (:host github :repo haji-ali/calfw-blocks
+;;            :pin "87937b7c7523b6d314bf9e21310924c94f182954"))
 
+(package! calfw-blocks
+  :recipe (:pin  "https://https://github.com/haji-ali/calfw-blocks" "87937b7c7523b6d314bf9e21310924c94f182954"))
 ;; (package! reader  ; or emacs-reader
 ;;   :recipe (:host codeberg :repo divyaranjan/emacs-reader))
 
