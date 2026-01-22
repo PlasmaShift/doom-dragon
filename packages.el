@@ -52,6 +52,7 @@
 (package! exec-path-from-shell)
 (package! no-littering)
 (package! dired-preview)
+(package! telega)
 (package! denote)
 (package! denote-org)
 (package! denote-sequence)
