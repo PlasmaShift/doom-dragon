@@ -356,7 +356,7 @@
 
 (setq-default notmuch-search-oldest-first nil)
 ;; (setq sendmail-program "mujmap")
-(setq sendmail-program "/home/plasmastrike/.cargo/bin/mujmap")
+(setq sendmail-program "mujmap")
 (setq message-send-mail-function #'message-send-mail-with-sendmail)
 (setq message-send-mail-function #'message-send-mail-with-sendmail)
 (setq message-sendmail-extra-arguments '("-C" "/home/plasmastrike/mail/account.fastmail/mujmap" "send")) ;;TODO remove home dir
