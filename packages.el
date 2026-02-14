@@ -96,7 +96,7 @@
 (package! notmuch-indicator)
 (package! ol-notmuch)
 (package! notmuch-transient)
-(package! notmuch-bookmark)
+(package! notmuch-bookmarks)
 ;; (package! notmuch-addr)
 (package! consult-notmuch)
 (package! org-msg)
