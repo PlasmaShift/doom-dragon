@@ -91,3 +91,16 @@
 ;; (package! org-appear
 ;;   :disable t)
 ;; (package! org-expose-emphasis-markers)
+
+(package! notmuch)
+(package! notmuch-indicator)
+(package! ol-notmuch)
+(package! notmuch-transient)
+(package! notmuch-bookmark)
+;; (package! notmuch-addr)
+(package! consult-notmuch)
+(package! org-msg)
+;; (package! piem)
+
+;; (package! elfeed)
+;; (package! cockoo-search)

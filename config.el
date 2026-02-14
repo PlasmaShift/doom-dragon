@@ -349,5 +349,39 @@
 ;;   ;; (add-hook 'org-mode-hook (lambda () (org-expose-emphasis-markers-mode t)))
 ;;   )
 
+(require 'notmuch-address)
+(setq notmuch-address-command "/usr/local/bin/notmuch-addrlookup")
+(notmuch-address-message-insinuate)
+(setq mail-user-agent 'notmuch-user-agent) ;; message-user-agent default
+
+(setq-default notmuch-search-oldest-first nil)
+;; (setq sendmail-program "mujmap")
+(setq sendmail-program "/home/plasmastrike/.cargo/bin/mujmap")
+(setq message-send-mail-function #'message-send-mail-with-sendmail)
+(setq message-send-mail-function #'message-send-mail-with-sendmail)
+(setq message-sendmail-extra-arguments '("-C" "/home/plasmastrike/mail/account.fastmail/mujmap" "send")) ;;TODO remove home dir
+
+(setq notmuch-always-prompt-for-sender nil)
+(setq user-mail-address "plasmastrike@voiddragon.me")
+;; (setq user-full-name "plasmastrike@voiddragon.me")
+(setq user-full-name "Plasma Strike")
+
+;; (setq sendmail-program "/home/plasmastrike/.local/bin/gmi")
+;; (setq message-sendmail-extra-arguments '("send" "--quiet" "-t" "-C" "~/mail/account.gmail"))
+
+;; ;; (setq message-sendmail-extra-arguments '("send" "--quiet" "-t" "-C" "/home/plasmastrike/mail/account.gmail"))
+;;   ;; Optional: Don't save outgoing mail locally.
+;; (setq notmuch-fcc-dirs nil)
+
+
+(setq send-mail-function 'sendmail-send-it
+      ;; sendmail-program "/usr/bin/msmtp"
+      mail-specify-envelope-from t
+      message-sendmail-envelope-from 'header
+      mail-envelope-from 'header)
+
+(setq notmuch-fcc-dirs nil)
+
+(append-message-to-init-config-debug "email configured")
 
 (append-message-to-init-config-debug "Config finished")
