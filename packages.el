@@ -101,6 +101,6 @@
 (package! consult-notmuch)
 (package! org-msg)
 ;; (package! piem)
-
+(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
 ;; (package! elfeed)
 ;; (package! cockoo-search)
