@@ -100,6 +100,8 @@
 ;; (package! notmuch-addr)
 (package! consult-notmuch)
 (package! org-msg)
+(package! msgpack)
+(package! tramp-rpc :recipe (:host github :repo “ArthurHeymans/emacs-tramp-rpc”))
 ;; (package! piem)
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
 ;; (package! elfeed)
