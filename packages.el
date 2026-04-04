@@ -99,6 +99,7 @@
 (package! notmuch-bookmarks)
 ;; (package! notmuch-addr)
 (package! consult-notmuch)
+(package! activities)
 (package! org-msg)
 (package! msgpack)
 ;; (package! tramp-rpc :recipe (:host github :repo “ArthurHeymans/emacs-tramp-rpc”))
