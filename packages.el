@@ -32,7 +32,7 @@
 ;; (package! builtin-package-2 :recipe (:repo "myfork/package"))
 
 ;; Specify a `:branch' to install a package from a particular branch or tag.
-;; This is required for some packages whose default branch isn't 'master' (which
+;; This is required for some packages.el whose default branch isn't 'master' (which
 ;; our package manager can't deal with; see radian-software/straight.el#279)
 ;; (package! builtin-package :recipe (:branch "develop"))
 
@@ -58,6 +58,12 @@
 (package! denote-sequence)
 (package! denote-journal)
 (package! consult-denote)
+(package! hyperbole)
+;; (package! )
+;; (package! )
+;; (package! )
+;; (package! )
+;; 
 (package! denote-silo)
 (package! denote-search)
 (package! denote-explore)
