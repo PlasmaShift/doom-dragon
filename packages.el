@@ -58,6 +58,7 @@
 (package! denote-sequence)
 (package! denote-journal)
 (package! consult-denote)
+(package! substitute)
 (package! hyperbole)
 ;; (package! )
 ;; (package! )
