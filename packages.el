@@ -55,7 +55,7 @@
 (package! telega)
 (package! denote)
 (package! denote-org)
-(package! denote-sequence)
+;; (package! denote-sequence)
 (package! denote-journal)
 (package! consult-denote)
 (package! substitute)
@@ -67,7 +67,7 @@
 ;; 
 (package! denote-silo)
 (package! denote-search)
-(package! denote-explore)
+;; (package! denote-explore)
 (package! citar-denote)
 (package! consult-notes)
 (package! denote-menu)
