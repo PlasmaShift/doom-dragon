@@ -53,6 +53,7 @@
 (package! no-littering)
 (package! dired-preview)
 (package! telega)
+(package! vdf-mode)
 (package! denote)
 (package! denote-org)
 ;; (package! denote-sequence)

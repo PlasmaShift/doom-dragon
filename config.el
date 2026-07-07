@@ -137,6 +137,10 @@ With prefix argument COUNT, indent that many lines after the paste."
 ;; Bind to SPC p = for fixing indentation of last paste
 (map! :n "SPC p =" #'+evil/indent-last-paste)
 
+(use-package! vdf-mode
+  :mode "\\.vdf\\'"
+  :hook (vdf-mode . (lambda () (setq tab-width 4))))
+
 (use-package! kdl-mode
   :mode "\\.kdl\\'")
 
