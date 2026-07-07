@@ -111,6 +111,32 @@
     (load custom-file)))
 
 
+;; Define custom indented paste commands
+(defun +evil/paste-indent-after (count register)
+  "Paste after and auto-indent the pasted text."
+  (interactive "<C-u><reg>")
+  (evil-paste-after count register)
+  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+
+(defun +evil/paste-indent-before (count register)
+  "Paste before and auto-indent the pasted text."
+  (interactive "<C-u><reg>")
+  (evil-paste-before count register)
+  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+
+;;; Indented paste utilities
+(defun +evil/indent-last-paste (count)
+  "Indent the last pasted text.
+With prefix argument COUNT, indent that many lines after the paste."
+  (interactive "p")
+  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+
+;; Bind to ]p and [p in normal state
+(map! :n "] p" #'+evil/paste-indent-after)
+(map! :n "[ p" #'+evil/paste-indent-before)
+;; Bind to SPC p = for fixing indentation of last paste
+(map! :n "SPC p =" #'+evil/indent-last-paste)
+
 (use-package! kdl-mode
   :mode "\\.kdl\\'")
 
