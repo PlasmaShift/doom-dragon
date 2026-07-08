@@ -124,18 +124,22 @@
   (evil-paste-before count register)
   (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
 
-;;; Indented paste utilities
-(defun +evil/indent-last-paste (count)
-  "Indent the last pasted text.
-With prefix argument COUNT, indent that many lines after the paste."
+(defun +evil/indent-region-or-last-paste (count)
+  "Indent current region or last pasted text.
+With prefix argument COUNT, indent that many lines.
+If region is active, indents the region. Otherwise indents last paste."
   (interactive "p")
-  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+  (if (use-region-p)
+      (evil-indent (region-beginning) (region-end))
+    (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\]))))
+
+
 
 ;; Bind to ]p and [p in normal state
 (map! :n "] p" #'+evil/paste-indent-after)
 (map! :n "[ p" #'+evil/paste-indent-before)
 ;; Bind to SPC p = for fixing indentation of last paste
-(map! :n "SPC p =" #'+evil/indent-last-paste)
+(map! :n "SPC p =" #'+evil/indent-region-or-last-paste)
 
 (use-package! vdf-mode
   :mode "\\.vdf\\'"
