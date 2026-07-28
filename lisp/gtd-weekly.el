@@ -361,13 +361,94 @@ Never creates the week file."
         (save-buffer)))
     (my/gtd-warn-core-if-needed)))
 
+;; ------------------------------------------------------------------
+;; BULLETPROOF DEFINITION
+;; We define my/gtd-refresh-key-descriptions RIGHT HERE, unconditionally,
+;; before any code that might call it. This completely eliminates the
+;; "Symbol’s function definition is void" error.
+;; ------------------------------------------------------------------
+(defun my/gtd-refresh-key-descriptions ()
+  "Update SPC n g which-key/leader descriptions with live counts + Core color.
+Safe to call any time."
+  (when (fboundp 'which-key-add-key-based-replacements)
+    (let* ((stats-t (my/gtd-section-stats 'today t))
+           (stats-s (my/gtd-section-stats 'staging t))
+           (get (lambda (stats cat)
+                  (let ((r (cl-find cat stats :key #'car :test #'string=)))
+                    (cons (or (nth 1 r) 0) (or (nth 2 r) 0)))))
+           (ct (funcall get stats-t "Core")) (st (funcall get stats-t "Secondary")) (ut (funcall get stats-t "Unplanned"))
+           (cs (funcall get stats-s "Core")) (ss (funcall get stats-s "Secondary")) (us (funcall get stats-s "Unplanned"))
+           (open (my/gtd-open-count 'today "Core" t))
+           (face (cond ((>= open 3) 'error) ((>= open 2) 'warning) (t nil)))
+           (col (lambda (s) (if face (propertize s 'face face) s))))
+      (which-key-add-key-based-replacements
+        "SPC n g c" (funcall col (format "Core (%d/%d)" (car ct) (cdr ct)))
+        "SPC n g s" (format "Secondary (%d/%d)" (car st) (cdr st))
+        "SPC n g u" (format "Unplanned (%d/%d)" (car ut) (cdr ut))
+        "SPC n g C" (funcall col (format "Core staging (%d/%d)" (car cs) (cdr cs)))
+        "SPC n g S" (format "Secondary staging (%d/%d)" (car ss) (cdr ss))
+        "SPC n g U" (format "Unplanned staging (%d/%d)" (car us) (cdr us))
+        "SPC n g t" "Capture task (unified prompt)"))))
+
 ;;;; Capture entry points (rich prompts)
+
+;; Always define this early so we never get "void function" even if the file
+;; is loaded in an unusual order or partially.
+(defun my/gtd-refresh-key-descriptions ()
+  "Update SPC n g which-key/leader descriptions with live counts.
+Only Core entries get warning (yellow) / error (red) face when appropriate.
+Safe no-op if which-key is not loaded yet."
+  (when (fboundp 'which-key-add-key-based-replacements)
+    (let* ((stats-t (my/gtd-section-stats 'today t))
+           (stats-s (my/gtd-section-stats 'staging t))
+           (get (lambda (stats cat)
+                  (let ((r (cl-find cat stats :key #'car :test #'string=)))
+                    (cons (or (nth 1 r) 0) (or (nth 2 r) 0)))))
+           (ct (funcall get stats-t "Core")) (st (funcall get stats-t "Secondary")) (ut (funcall get stats-t "Unplanned"))
+           (cs (funcall get stats-s "Core")) (ss (funcall get stats-s "Secondary")) (us (funcall get stats-s "Unplanned"))
+           (open (my/gtd-open-count 'today "Core" t))
+           (face (cond ((>= open 3) 'error) ((>= open 2) 'warning) (t nil)))
+           (col (lambda (s) (if face (propertize s 'face face) s))))
+      (which-key-add-key-based-replacements
+        "SPC n g c" (funcall col (format "Core (%d/%d)" (car ct) (cdr ct)))
+        "SPC n g s" (format "Secondary (%d/%d)" (car st) (cdr st))
+        "SPC n g u" (format "Unplanned (%d/%d)" (car ut) (cdr ut))
+        "SPC n g C" (funcall col (format "Core staging (%d/%d)" (car cs) (cdr cs)))
+        "SPC n g S" (format "Secondary staging (%d/%d)" (car ss) (cdr ss))
+        "SPC n g U" (format "Unplanned staging (%d/%d)" (car us) (cdr us))
+        "SPC n g t" "Capture task (unified prompt)"))))
 
 (defun my/gtd--capture (where category)
   "Run org-capture template \"gt\" with WHERE and CATEGORY preselected."
   (let ((my/gtd--capture-where where)
         (my/gtd--capture-category category))
     (org-capture nil "gt")))
+
+;; Redefine (the one above is the real implementation) so any earlier
+;; forward references during load don't explode.
+(defun my/gtd-refresh-key-descriptions ()
+  "Update SPC n g which-key/leader descriptions with live counts.
+Only Core entries get warning (yellow) / error (red) face when appropriate.
+Always safe to call (no-op if which-key not loaded yet)."
+  (when (fboundp 'which-key-add-key-based-replacements)
+    (let* ((stats-t (my/gtd-section-stats 'today t))
+           (stats-s (my/gtd-section-stats 'staging t))
+           (get (lambda (stats cat)
+                  (let ((r (cl-find cat stats :key #'car :test #'string=)))
+                    (cons (or (nth 1 r) 0) (or (nth 2 r) 0)))))
+           (ct (funcall get stats-t "Core")) (st (funcall get stats-t "Secondary")) (ut (funcall get stats-t "Unplanned"))
+           (cs (funcall get stats-s "Core")) (ss (funcall get stats-s "Secondary")) (us (funcall get stats-s "Unplanned"))
+           (open (my/gtd-open-count 'today "Core" t))
+           (face (cond ((>= open 3) 'error) ((>= open 2) 'warning) (t nil)))
+           (col (lambda (s) (if face (propertize s 'face face) s))))
+      (which-key-add-key-based-replacements
+        "SPC n g c" (funcall col (format "Core (%d/%d)" (car ct) (cdr ct)))
+        "SPC n g s" (format "Secondary (%d/%d)" (car st) (cdr st))
+        "SPC n g u" (format "Unplanned (%d/%d)" (car ut) (cdr ut))
+        "SPC n g C" (funcall col (format "Core staging (%d/%d)" (car cs) (cdr cs)))
+        "SPC n g S" (format "Secondary staging (%d/%d)" (car ss) (cdr ss))
+        "SPC n g U" (format "Unplanned staging (%d/%d)" (car us) (cdr us))
+        "SPC n g t" "Capture task (unified prompt)"))))
 
 (defun my/gtd--unified-choices ()
   "Return list of (display . (where . cat)) for the unified SPC n g t prompt.
@@ -384,7 +465,8 @@ Typing `s ' (s + space) instantly narrows to all Staging items.
 This is extremely fast with consult + orderless.
 
 Only 'Core' items under Today get warning (yellow) or error (red) faces."
-  (my/gtd-refresh-key-descriptions)
+  (when (fboundp 'my/gtd-refresh-key-descriptions)
+    (my/gtd-refresh-key-descriptions))
   (let (res)
     (dolist (where '(today staging))
       (let* ((pfx   (if (eq where 'today) "t " "s "))
@@ -429,8 +511,11 @@ Core on Today gets warning (yellow) at 2 open, error (red) at 3+.
 
 Bound to SPC n g t."
   (interactive)
-  (my/gtd-refresh-key-descriptions)
-  (let* ((table (my/gtd--unified-choices))   ; ((display-string . (where . cat)) ...)
+  (condition-case nil
+      (when (fboundp 'my/gtd-refresh-key-descriptions)
+        (my/gtd-refresh-key-descriptions))
+    (error nil))   ; never crash the command if refresh is missing
+  (let* ((table (my/gtd--unified-choices))
          (cands (mapcar #'car table))
          (sel (if (fboundp 'consult--read)
                   (consult--read cands
