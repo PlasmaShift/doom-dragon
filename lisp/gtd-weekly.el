@@ -369,31 +369,80 @@ Never creates the week file."
         (my/gtd--capture-category category))
     (org-capture nil "gt")))
 
-(defun my/gtd--where-prompt (default)
-  "Completing-read with Core counts shown for Today and Staging."
-  (let* ((today-lab (my/gtd-format-where-label "Today" 'today))
-         (stag-lab  (my/gtd-format-where-label "Staging" 'staging))
-         (choices (list today-lab stag-lab))
-         (sel (completing-read "Where: " choices nil t nil nil default)))
-    (cond ((string-prefix-p "Today" sel) 'today)
-          ((string-prefix-p "Staging" sel) 'staging)
-          (t 'today))))
+(defun my/gtd--unified-choices ()
+  "Return list of (display . (where . cat)) for the unified SPC n g t prompt.
 
-(defun my/gtd--cat-prompt (where default)
-  "Completing-read categories with (done/total) + Core focus colors."
-  (let* ((cats (mapcar (lambda (c) (my/gtd-format-cat-label c where)) my/gtd-categories))
-         (sel (completing-read (format "Category (%s): " (if (eq where 'staging) "Staging" "Today"))
-                               cats nil t nil nil default))
-         ;; strip the (d/t) suffix and face property to get raw category
-         (raw (replace-regexp-in-string " ?([^)]+)" "" sel)))
-    raw))
+Candidates look like:
+  t Core (2/5)
+  t Secondary (1/3)
+  s Core (0/1)
+  s Unplanned (2/2)
+
+Typing `t ' (t + space) instantly narrows to all Today items.
+Typing `s ' (s + space) instantly narrows to all Staging items.
+
+This is extremely fast with consult + orderless.
+
+Only 'Core' items under Today get warning (yellow) or error (red) faces."
+  (my/gtd-refresh-key-descriptions)
+  (let (res)
+    (dolist (where '(today staging))
+      (let* ((pfx   (if (eq where 'today) "t " "s "))
+             (stats (my/gtd-section-stats where t)))
+        (dolist (cat my/gtd-categories)
+          (let* ((row  (cl-find cat stats :key #'car :test #'string=))
+                 (done (or (nth 1 row) 0))
+                 (tot  (or (nth 2 row) 0))
+                 (open (my/gtd-open-count where cat t))
+                 ;; Color only Today + Core when the count is high
+                 (face (cond
+                        ((and (eq where 'today)
+                              (string= cat "Core")
+                              (>= open 3)) 'error)
+                        ((and (eq where 'today)
+                              (string= cat "Core")
+                              (>= open 2)) 'warning)
+                        (t nil)))
+                 (disp (format "%s%s (%d/%d)" pfx cat done tot)))
+            (when face
+              (setq disp (propertize disp 'face face)))
+            (push (cons disp (cons where cat)) res)))))
+    (nreverse res)))
+
+(defun my/gtd--resolve (sel table)
+  "Return (where . cat) for SEL, ignoring any text properties (faces)."
+  (let ((plain (substring-no-properties sel)))
+    (cdr (seq-find (lambda (e) (string= plain (substring-no-properties (car e))))
+                   table))))
 
 ;;;###autoload
 (defun my/gtd-capture-task ()
-  "Prompt for Today/Staging (with Core counts) then category (with counts + colors)."
+  "Unified prompt: Today + Staging + all categories in one list.
+
+Filtering:
+  `t '   → narrow to Today items
+  `s '   → narrow to Staging items
+
+Works great with consult + orderless.
+
+Core on Today gets warning (yellow) at 2 open, error (red) at 3+.
+
+Bound to SPC n g t."
   (interactive)
-  (let* ((where (my/gtd--where-prompt "Today"))
-         (cat (my/gtd--cat-prompt where "Core")))
+  (my/gtd-refresh-key-descriptions)
+  (let* ((table (my/gtd--unified-choices))   ; ((display-string . (where . cat)) ...)
+         (cands (mapcar #'car table))
+         (sel (if (fboundp 'consult--read)
+                  (consult--read cands
+                                 :prompt "GTD (t SPC = Today, s SPC = Staging): "
+                                 :require-match t
+                                 :category 'gtd-task)
+                (completing-read "GTD (t / s prefix): " cands nil t)))
+         (pair (my/gtd--resolve sel table))
+         (where (car pair))
+         (cat   (cdr pair)))
+    (unless (and where cat)
+      (user-error "GTD: could not resolve selection"))
     (my/gtd--capture where cat)))
 
 ;;;###autoload
