@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: gtd-week
+# key: gtdw
+# uuid: gtd-week
+# --
+`(my/gtd-week-body (my/gtd-week-start))`$0

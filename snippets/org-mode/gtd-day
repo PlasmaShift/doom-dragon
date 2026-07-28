@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: gtd-day
+# key: gtdd
+# uuid: gtd-day
+# --
+* <${1:`(format-time-string "%Y-%m-%d %a")`}>
+** [/] Core
+** [/] Secondary
+** [/] Unplanned
+$0

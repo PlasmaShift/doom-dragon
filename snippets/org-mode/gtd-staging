@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: gtd-staging
+# key: gtds
+# uuid: gtd-staging
+# --
+* Staging
+** [/] Core
+** [/] Secondary
+** [/] Unplanned
+$0

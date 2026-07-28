@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: gtd-task
+# key: gtdt
+# uuid: gtd-task
+# --
+*** TODO ${1:task}
+$0

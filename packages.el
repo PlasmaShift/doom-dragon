@@ -59,6 +59,8 @@
 ;; (package! denote-sequence)
 (package! denote-journal)
 (package! consult-denote)
+(package! tempel)
+(package! tempel-collection)
 (package! substitute)
 ;; Disabled: savannah hyperbole checkout fails (git cat-file / bad object 907ef24)
 ;; (package! hyperbole)

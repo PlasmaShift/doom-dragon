@@ -211,59 +211,106 @@ If region is active, indents the region. Otherwise indents last paste."
   :hook
   (dired-mode . denote-dired-mode)
   :config
+  ;; Prefer system-type so "plasmastrike" on Linux is not mistaken for Windows "Plasma".
   (cond
-   ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+   ((and (eq system-type 'windows-nt)
+         (string-match-p "travi" user-login-name)) ;; Travis Windows + Rusty Drive
     (setopt denote-directory (expand-file-name "R:/docs/denote/denote")))
-   ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+   ((eq system-type 'windows-nt) ;; Matt / other Windows
     (setopt denote-directory (expand-file-name "c:/Users/Plasma/denote/denote/")))
    (t (setopt denote-directory (expand-file-name "~/doc/denote/denote")))))
 
-;; Separate block for Denote Journal (as requested)
+;; General daily journal (separate from weekly GTD)
 (use-package! denote-journal
   :after denote
   :demand t
   :config
-  ;; Journal-specific settings: Use daily journals with timed headings
-  (setopt denote-journal-title-format 'day)
-  (setopt denote-journal-hook '(denote-journal-new-or-existing-entry))
-  ;; Set journal directory conditionally, matching denote-directory
+  (setopt denote-journal-title-format 'day
+          denote-journal-interval 'daily
+          ;; hook runs AFTER a new entry is created — do not call new-or-existing here
+          denote-journal-hook nil)
   (cond
-   ((string-match-p "travi" user-login-name) ;; Travis windows Computer with an Rusty Drive
+   ((and (eq system-type 'windows-nt)
+         (string-match-p "travi" user-login-name))
     (setopt denote-journal-directory (expand-file-name "R:/docs/denote/journal")))
-   ((string-match-p "travi" user-login-name) ;; Matts Windows computer It conat be ~/doc Damm windows
+   ((eq system-type 'windows-nt)
     (setopt denote-journal-directory (expand-file-name "c:/Users/Plasma/denote/journal")))
    (t (setopt denote-journal-directory (expand-file-name "~/doc/denote/journal")))))
 
+;; Weekly GTD (Saturday–Friday) — local module, not a package
+(after! denote
+  (load! "lisp/gtd-weekly")
+  (cond
+   ((and (eq system-type 'windows-nt)
+         (string-match-p "travi" user-login-name))
+    (setopt my/gtd-directory (expand-file-name "R:/docs/denote/gtd")))
+   ((eq system-type 'windows-nt)
+    (setopt my/gtd-directory (expand-file-name "c:/Users/Plasma/denote/gtd")))
+   (t (setopt my/gtd-directory (expand-file-name "~/doc/denote/gtd"))))
+  (my/gtd-ensure-directory))
+
+;; Tempel (compare with Doom's built-in yasnippet under snippets/)
+(use-package! tempel
+  :bind (("M-+" . tempel-complete)
+         ("M-*" . tempel-insert))
+  :init
+  (setq tempel-path
+        (list (expand-file-name "templates/*.eld" doom-user-dir)))
+  :config
+  (defun my/tempel-setup-capf ()
+    (setq-local completion-at-point-functions
+                (cons #'tempel-expand completion-at-point-functions)))
+  (add-hook 'conf-mode-hook #'my/tempel-setup-capf)
+  (add-hook 'prog-mode-hook #'my/tempel-setup-capf)
+  (add-hook 'text-mode-hook #'my/tempel-setup-capf))
+
+(use-package! tempel-collection
+  :after tempel)
+
 (after! org-capture
+  ;; One place for all templates (avoid setopt then add-to-list fighting)
   (setopt org-capture-templates
-          '(("d" "Denote: New note (create or edit)" plain
-             (function denote-org-capture)
-             "%?" :empty-lines 1)
-            ("j" "Denote: Journal entry (append timed heading)" entry
-             (file+function (lambda () (denote-journal-new-or-existing-entry))
-                            ;; This positions the cursor at the end, hiding the rest of the journal
-                            (lambda () (goto-char (point-max)) (unless (bolp) (newline))))
-             "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U" :empty-lines 1))))
+          (append
+           '(("d" "Denote: New note (create or edit)" plain
+              (function denote-org-capture)
+              "%?" :empty-lines 1)
+             ("j" "Denote: Journal entry (append timed heading)" entry
+              (file+function denote-journal-path-to-new-or-existing-entry
+                             (lambda ()
+                               (goto-char (point-max))
+                               (unless (bolp) (newline))))
+              "* [%H:%M] %(read-string \"Entry title: \")\n%?\n%U"
+              :empty-lines 1)
+             ("k" "Journal (simple)" entry
+              (file denote-journal-path-to-new-or-existing-entry)
+              "* %U %?\n%i\n%a"
+              :kill-buffer t
+              :empty-lines 1))
+           (my/gtd-org-capture-templates))))
 
-
-(with-eval-after-load 'org-capture
-  (add-to-list 'org-capture-templates
-               '("k" "Journal" entry
-                 (file denote-journal-path-to-new-or-existing-entry)
-                 "* %U %?\n%i\n%a"
-                 :kill-buffer t
-                 :empty-lines 1)))
-
-;; Denote bindings that overwrite org-roam's under SPC n d
-;; These are for use within a normal Emacs session.
+;; Denote notes
 (map! :leader
       (:prefix ("n d" . "Denote")
-               "c" #'denote-org-capture               :desc "Create/edit note"
-               "j" (lambda () (interactive) (org-capture nil "j")) :desc "Journal entry"
-               "f" #'consult-denote-find              :desc "Find note"
-               "g" #'consult-denote-grep              :desc "Grep in notes"
-               "l" #'denote-link                      :desc "Insert link"
-               "b" #'denote-backlinks                 :desc "Backlinks"))
+       :desc "Create/edit note" "c" #'denote-org-capture
+       :desc "Journal entry"    "j" (cmd! (org-capture nil "j"))
+       :desc "Find note"        "f" #'consult-denote-find
+       :desc "Grep in notes"    "g" #'consult-denote-grep
+       :desc "Insert link"      "l" #'denote-link
+       :desc "Backlinks"        "b" #'denote-backlinks))
+
+;; Weekly GTD
+(map! :leader
+      (:prefix ("n g" . "GTD week")
+       :desc "Open this week"           "g" #'my/gtd-open-this-week
+       :desc "Capture task (prompt)"    "t" #'my/gtd-capture-task
+       :desc "Capture Core today"       "c" #'my/gtd-capture-today-core
+       :desc "Capture Secondary today"  "s" #'my/gtd-capture-today-secondary
+       :desc "Capture Unplanned today"  "u" #'my/gtd-capture-today-unplanned
+       :desc "Capture Core staging"     "C" #'my/gtd-capture-staging-core
+       :desc "Capture Secondary staging" "S" #'my/gtd-capture-staging-secondary
+       :desc "Capture Unplanned staging" "U" #'my/gtd-capture-staging-unplanned
+       :desc "Core task status"         "n" #'my/gtd-core-status
+       :desc "Org-capture GTD menu"     "x" (cmd! (org-capture nil "g")))))
 
 
 
@@ -355,11 +402,14 @@ If region is active, indents the region. Otherwise indents last paste."
 
 (use-package! consult-notes
   :demand t
-  :after denote
-  :init
+  :after (denote denote-journal)
+  :config
   (setopt consult-notes-file-dir-sources
-  	  `(("Denote Notes"  ?d ,(denote-directory))
-  	    )))
+          `(("Denote Notes" ?d ,(denote-directory))
+            ("GTD weeks"    ?g ,(if (boundp 'my/gtd-directory)
+                                    (expand-file-name my/gtd-directory)
+                                  (expand-file-name "~/doc/denote/gtd")))
+            ("Journal"      ?j ,(denote-journal-directory)))))
 
 (use-package! consult-denote
   :bind
