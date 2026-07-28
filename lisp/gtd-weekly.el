@@ -77,8 +77,22 @@ TIME is Emacs time; default is now."
   (format-time-string "<%Y-%m-%d %a>" (or time (current-time))))
 
 (defun my/gtd-ensure-directory ()
-  "Create `my/gtd-directory' if needed and return it."
+  "Create the base `my/gtd-directory' if needed and return it."
   (let ((dir (file-name-as-directory (expand-file-name my/gtd-directory))))
+    (unless (file-directory-p dir)
+      (make-directory dir t))
+    dir))
+
+(defun my/gtd-year-for (time)
+  "Four digit year string for TIME (or now)."
+  (format-time-string "%Y" (or time (current-time))))
+
+(defun my/gtd-effective-directory (&optional time)
+  "Return <my/gtd-directory>/<year>/ for the given TIME (defaults to now).
+Creates the year directory if necessary."
+  (let* ((base (my/gtd-ensure-directory))
+         (year (my/gtd-year-for time))
+         (dir (file-name-as-directory (expand-file-name year base))))
     (unless (file-directory-p dir)
       (make-directory dir t))
     dir))
@@ -119,14 +133,20 @@ TIME is Emacs time; default is now."
 ;;;; Find / create weekly file
 
 (defun my/gtd--files-for-week (week-start)
-  "Return Denote files in `my/gtd-directory' for WEEK-START Saturday."
-  (let* ((dir (my/gtd-ensure-directory))
+  "Return Denote files for WEEK-START Saturday.
+Searches first in the year subdirectory, then falls back to base dir (for old files during transition)."
+  (let* ((year-dir (my/gtd-effective-directory week-start))
+         (base-dir (my/gtd-ensure-directory))
          (day (format-time-string "%Y%m%d" week-start))
-         (denote-directory dir)
          (rx (format "\\`%sT[0-9]\\{6\\}.*%s"
                      (regexp-quote day)
-                     (regexp-quote my/gtd-keyword))))
-    (denote-directory-files rx)))
+                     (regexp-quote my/gtd-keyword)))
+         (files (let ((denote-directory year-dir))
+                  (denote-directory-files rx))))
+    (when (null files)
+      (let ((denote-directory base-dir))
+        (setq files (denote-directory-files rx))))
+    files))
 
 (defun my/gtd-weeks-in-year (&optional year)
   "Return number of ISO weeks in YEAR (52 or 53)."
@@ -136,26 +156,28 @@ TIME is Emacs time; default is now."
     last-week))
 
 (defun my/gtd-week-title (&optional week-start)
-  "Return rich title with week number, weeks-in-year, month, start+end day.
-Example: Week 31/52 — Jul 2026 (Sat 25 Jul – Fri 31 Jul)"
+  "Return the title used for the Denote file.
+The slug will be like 'week-30-jul-7-25-31'.
+We put files in a year subdirectory."
   (let* ((start (or week-start (my/gtd-week-start)))
          (end (time-add start (days-to-time 6)))
          (w (format-time-string "%V" start))
-         (y (string-to-number (format-time-string "%Y" start)))
-         (total-w (my/gtd-weeks-in-year y))
-         (s (format-time-string "%a %d %b" start))
-         (e (format-time-string "%a %d %b" end)))
-    (format "Week %s/%d — %s %s (%s – %s)" w total-w y (format-time-string "%b" start) s e)))
+         (mon (downcase (format-time-string "%b" start)))
+         (mon-num (format-time-string "%-m" start))   ; 7 for July
+         (d1 (format-time-string "%-d" start))
+         (d2 (format-time-string "%-d" end)))
+    (format "week-%s-%s-%s-%s-%s" w mon mon-num d1 d2)))
 
 (defun my/gtd-path-to-new-or-existing (&optional time)
   "Return path to this week's GTD file, *creating* it if missing.
-Use for actual capture / open.  TIME selects which week."
+Files now live in <my/gtd-directory>/<year>/ .
+TIME selects which week (defaults to current)."
   (let* ((week-start (my/gtd-week-start time))
-         (dir (my/gtd-ensure-directory))
+         (year-dir (my/gtd-effective-directory week-start))
          (existing (my/gtd--files-for-week week-start)))
     (cond
      ((null existing)
-      (let ((denote-directory dir)
+      (let ((denote-directory year-dir)
             (denote-kill-buffers nil)
             (title (my/gtd-week-title week-start))
             (date-str (format-time-string "%Y-%m-%d" week-start))
@@ -167,22 +189,23 @@ Use for actual capture / open.  TIME selects which week."
      ((= (length existing) 1)
       (car existing))
      (t
-      (let ((default-directory dir))
+      (let ((default-directory year-dir))
         (expand-file-name
          (completing-read "Select GTD week file: "
                           (mapcar #'file-name-nondirectory existing)
                           nil t)
-         dir))))))
+         year-dir))))))
 
 (defun my/gtd--week-file-peek (&optional time)
   "Return path to this week's file if it already exists, else nil.
-Never creates.  Used for showing counts in menus without side effects."
+Never creates.  Used for showing counts in menus without side effects.
+Looks inside the proper year subdirectory."
   (let* ((week-start (my/gtd-week-start time))
          (existing (my/gtd--files-for-week week-start)))
     (cond
      ((null existing) nil)
      ((= (length existing) 1) (car existing))
-     (t (let ((default-directory (my/gtd-ensure-directory)))
+     (t (let ((default-directory (my/gtd-effective-directory week-start)))
           (expand-file-name
            (completing-read "Select GTD week file: "
                             (mapcar #'file-name-nondirectory existing)
