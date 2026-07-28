@@ -111,18 +111,30 @@
     (load custom-file)))
 
 
-;; Define custom indented paste commands
-(defun +evil/paste-indent-after (count register)
-  "Paste after and auto-indent the pasted text."
-  (interactive "<C-u><reg>")
-  (evil-paste-after count register)
-  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+;; Indented paste helpers (body was previously outside the defuns — fixed)
+(defun +evil/paste-indent-after (count &optional register)
+  "Paste after on a new line and auto-indent.
+COUNT is how many times to paste. REGISTER is optional."
+  (interactive
+   (list (prefix-numeric-value current-prefix-arg)
+         (when (and current-prefix-arg (not (numberp current-prefix-arg)))
+           evil-this-register)))
+  (evil-append-line 1)
+  (evil-paste-after count (or register ?\"))
+  (evil-indent (evil-get-marker-position ?\[)
+               (evil-get-marker-position ?\])))
 
-(defun +evil/paste-indent-before (count register)
-  "Paste before and auto-indent the pasted text."
-  (interactive "<C-u><reg>")
-  (evil-paste-before count register)
-  (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\])))
+(defun +evil/paste-indent-before (count &optional register)
+  "Paste before on a new line and auto-indent.
+COUNT is how many times to paste. REGISTER is optional."
+  (interactive
+   (list (prefix-numeric-value current-prefix-arg)
+         (when (and current-prefix-arg (not (numberp current-prefix-arg)))
+           evil-this-register)))
+  (evil-open-above 1)
+  (evil-paste-before count (or register ?\"))
+  (evil-indent (evil-get-marker-position ?\[)
+               (evil-get-marker-position ?\])))
 
 (defun +evil/indent-region-or-last-paste (count)
   "Indent current region or last pasted text.
@@ -131,15 +143,12 @@ If region is active, indents the region. Otherwise indents last paste."
   (interactive "p")
   (if (use-region-p)
       (evil-indent (region-beginning) (region-end))
-    (evil-indent (evil-get-marker-position ?\[) (evil-get-marker-position ?\]))))
+    (evil-indent (evil-get-marker-position ?\[)
+                 (evil-get-marker-position ?\]))))
 
-
-
-;; Bind to ]p and [p in normal state
-(map! :n "] p" #'+evil/paste-indent-after)
-(map! :n "[ p" #'+evil/paste-indent-before)
-;; Bind to SPC p = for fixing indentation of last paste
-(map! :n "SPC p =" #'+evil/indent-region-or-last-paste)
+(map! :n "]p" #'+evil/paste-indent-after
+      :n "[p" #'+evil/paste-indent-before
+      :n "SPC p =" #'+evil/indent-region-or-last-paste)
 
 (use-package! vdf-mode
   :mode "\\.vdf\\'"
@@ -286,7 +295,10 @@ If region is active, indents the region. Otherwise indents last paste."
               "* %U %?\n%i\n%a"
               :kill-buffer t
               :empty-lines 1))
-           (my/gtd-org-capture-templates))))
+           (my/gtd-org-capture-templates)))
+  ;; Ensure the GTD submenu descriptions start with real counts (refreshed again on SPC n g x)
+  (when (fboundp 'my/gtd-refresh-capture-templates)
+    (my/gtd-refresh-capture-templates)))
 
 ;; Denote notes
 (map! :leader
@@ -302,7 +314,7 @@ If region is active, indents the region. Otherwise indents last paste."
 (map! :leader
       (:prefix ("n g" . "GTD week")
        :desc "Open this week"           "g" #'my/gtd-open-this-week
-       :desc "Capture task (prompt)"    "t" #'my/gtd-capture-task
+       :desc "Capture task (prompt with counts)" "t" #'my/gtd-capture-task
        :desc "Capture Core today"       "c" #'my/gtd-capture-today-core
        :desc "Capture Secondary today"  "s" #'my/gtd-capture-today-secondary
        :desc "Capture Unplanned today"  "u" #'my/gtd-capture-today-unplanned
@@ -310,7 +322,7 @@ If region is active, indents the region. Otherwise indents last paste."
        :desc "Capture Secondary staging" "S" #'my/gtd-capture-staging-secondary
        :desc "Capture Unplanned staging" "U" #'my/gtd-capture-staging-unplanned
        :desc "Core task status"         "n" #'my/gtd-core-status
-       :desc "Org-capture GTD menu"     "x" (cmd! (org-capture nil "g")))))
+       :desc "Org-capture GTD menu (live counts)" "x" (cmd! (my/gtd-org-capture "g"))))
 
 
 

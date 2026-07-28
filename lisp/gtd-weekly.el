@@ -24,8 +24,20 @@
   :type 'directory
   :group 'my/gtd)
 
-(defcustom my/gtd-keyword "gtd"
-  "Denote keyword for weekly GTD files."
+(defcustom my/gtd-keyword "weekly"
+  "Denote keyword for weekly GTD files.
+
+Suggestions for low keyword collision (pick one, change here and restart):
+  - weekly     (current)
+  - plan
+  - focus
+  - intent
+  - wk
+  - week-plan
+  - gtd-plan
+  - rhythm / cadence / sprint
+
+The keyword appears in the file name as __<keyword>.org"
   :type 'string
   :group 'my/gtd)
 
@@ -116,9 +128,28 @@ TIME is Emacs time; default is now."
                      (regexp-quote my/gtd-keyword))))
     (denote-directory-files rx)))
 
+(defun my/gtd-weeks-in-year (&optional year)
+  "Return number of ISO weeks in YEAR (52 or 53)."
+  (let* ((y (or year (string-to-number (format-time-string "%Y"))))
+         (dec28 (encode-time 0 0 0 28 12 y))
+         (last-week (string-to-number (format-time-string "%V" dec28))))
+    last-week))
+
+(defun my/gtd-week-title (&optional week-start)
+  "Return rich title with week number, weeks-in-year, month, start+end day.
+Example: Week 31/52 — Jul 2026 (Sat 25 Jul – Fri 31 Jul)"
+  (let* ((start (or week-start (my/gtd-week-start)))
+         (end (time-add start (days-to-time 6)))
+         (w (format-time-string "%V" start))
+         (y (string-to-number (format-time-string "%Y" start)))
+         (total-w (my/gtd-weeks-in-year y))
+         (s (format-time-string "%a %d %b" start))
+         (e (format-time-string "%a %d %b" end)))
+    (format "Week %s/%d — %s %s (%s – %s)" w total-w y (format-time-string "%b" start) s e)))
+
 (defun my/gtd-path-to-new-or-existing (&optional time)
-  "Return path to this week's GTD file, creating it if missing.
-TIME selects which week (default now).  Identifier date is the Saturday."
+  "Return path to this week's GTD file, *creating* it if missing.
+Use for actual capture / open.  TIME selects which week."
   (let* ((week-start (my/gtd-week-start time))
          (dir (my/gtd-ensure-directory))
          (existing (my/gtd--files-for-week week-start)))
@@ -126,7 +157,7 @@ TIME selects which week (default now).  Identifier date is the Saturday."
      ((null existing)
       (let ((denote-directory dir)
             (denote-kill-buffers nil)
-            (title (format-time-string "GTD week of %Y-%m-%d (Sat–Fri)" week-start))
+            (title (my/gtd-week-title week-start))
             (date-str (format-time-string "%Y-%m-%d" week-start))
             (body (my/gtd-week-body week-start)))
         (save-window-excursion
@@ -142,6 +173,21 @@ TIME selects which week (default now).  Identifier date is the Saturday."
                           (mapcar #'file-name-nondirectory existing)
                           nil t)
          dir))))))
+
+(defun my/gtd--week-file-peek (&optional time)
+  "Return path to this week's file if it already exists, else nil.
+Never creates.  Used for showing counts in menus without side effects."
+  (let* ((week-start (my/gtd-week-start time))
+         (existing (my/gtd--files-for-week week-start)))
+    (cond
+     ((null existing) nil)
+     ((= (length existing) 1) (car existing))
+     (t (let ((default-directory (my/gtd-ensure-directory)))
+          (expand-file-name
+           (completing-read "Select GTD week file: "
+                            (mapcar #'file-name-nondirectory existing)
+                            nil t)
+           default-directory))))))
 
 ;;;###autoload
 (defun my/gtd-open-this-week (&optional time)
@@ -199,11 +245,11 @@ With prefix arg, prompt for a date in that week."
   "Org-capture target function: point on today/staging × category."
   (my/gtd-goto-section my/gtd--capture-where my/gtd--capture-category))
 
-;;;; Core task counting
+;;;; Stats: done/total + open counts for rich prompts
 
-(defun my/gtd--count-todos-under-point ()
-  "Count open TODO headlines that are direct children of heading at point."
-  (let ((count 0)
+(defun my/gtd--done-total-under-heading ()
+  "Return (DONE . TOTAL) for direct child TODO items under the heading at point."
+  (let ((done 0) (total 0)
         (parent-level (org-current-level))
         (end (save-excursion (org-end-of-subtree t t) (point))))
     (save-excursion
@@ -211,35 +257,92 @@ With prefix arg, prompt for a date in that week."
       (while (re-search-forward org-heading-regexp end t)
         (let ((level (org-current-level))
               (todo (org-get-todo-state)))
-          (when (and todo
-                     (= level (1+ parent-level))
-                     (not (member todo org-done-keywords)))
-            (cl-incf count)))))
-    count))
+          (when (and todo (= level (1+ parent-level)))
+            (cl-incf total)
+            (when (member todo org-done-keywords) (cl-incf done))))))
+    (cons done total)))
+
+(defun my/gtd-section-stats (where &optional no-create)
+  "Return ((CAT DONE TOTAL) ...) for WHERE.
+If NO-CREATE is non-nil, do not create the week file just to read stats."
+  (let* ((path (if no-create
+                 (my/gtd--week-file-peek)
+               (my/gtd-path-to-new-or-existing)))
+         res)
+    (if (not path)
+        ;; no file yet — return zeros for everything, safely
+        (setq res (mapcar (lambda (c) (list c 0 0)) my/gtd-categories))
+      (with-current-buffer (find-file-noselect path)
+        (org-with-wide-buffer
+         (dolist (cat my/gtd-categories)
+           (save-excursion
+             (when (my/gtd-goto-section where cat)
+               (let* ((dt (my/gtd--done-total-under-heading))
+                      (d (car dt)) (tot (cdr dt)))
+                 (push (list cat d tot) res)))))))
+      (setq res (nreverse res)))
+    res))
+
+(defun my/gtd-open-count (where category &optional no-create)
+  "Open (non-done) count for CATEGORY under WHERE.
+NO-CREATE: do not create file just to count."
+  (let* ((stats (my/gtd-section-stats where no-create))
+         (row (cl-find category stats :key #'car :test #'string=)))
+    (if row (- (nth 2 row) (nth 1 row)) 0)))
+
+(defun my/gtd-format-where-label (label where)
+  "Rich label for where prompt: Today (Core 2/5) etc.
+Never creates the week file."
+  (let* ((stats (my/gtd-section-stats where t)) ; t = no-create
+         (core-row (cl-find "Core" stats :key #'car :test #'string=))
+         (c-done (or (nth 1 core-row) 0))
+         (c-tot  (or (nth 2 core-row) 0))
+         (core-str (format "Core %d/%d" c-done c-tot)))
+    (format "%s (%s)" label core-str)))
+
+(defun my/gtd-format-cat-label (cat where)
+  "Rich label for category prompt with done/total + Core focus colors.
+Never creates the week file."
+  (let* ((stats (my/gtd-section-stats where t))
+         (row (cl-find cat stats :key #'car :test #'string=))
+         (done (or (nth 1 row) 0))
+         (tot  (or (nth 2 row) 0))
+         (base (format "%s (%d/%d)" cat done tot))
+         (open (my/gtd-open-count where cat t))
+         (will-be (if (string= cat "Core") (1+ open) open))
+         (face
+          (cond
+           ((and (string= cat "Core")
+                 (eq where 'today)
+                 (>= will-be 4)) 'error)
+           ((and (string= cat "Core")
+                 (eq where 'today)
+                 (= will-be 3))
+            ;; modus-vivendi yellow-ish is often `warning` or `modus-themes-warning`
+            'warning)
+           (t nil))))
+    (if face (propertize base 'face face) base)))
 
 (defun my/gtd-count-core (&optional where)
-  "Return number of open Core TODOs for WHERE (`today' or `staging')."
-  (let ((where (or where 'today))
-        (path (my/gtd-path-to-new-or-existing)))
-    (with-current-buffer (find-file-noselect path)
-      (org-with-wide-buffer
-       (save-excursion
-         (my/gtd-goto-section where "Core")
-         (my/gtd--count-todos-under-point))))))
+  "Return number of open Core TODOs for WHERE (compat)."
+  (my/gtd-open-count (or where 'today) "Core"))
 
 ;;;###autoload
 (defun my/gtd-core-status (&optional where)
-  "Message open Core task count for WHERE (default today) and warn if over limit."
+  "Show open Core count + full stats for the week."
   (interactive)
   (let* ((where (or where 'today))
-         (n (my/gtd-count-core where))
+         (path (my/gtd-path-to-new-or-existing))
+         (stats (my/gtd-section-stats where))
+         (core-open (my/gtd-open-count where "Core"))
          (label (if (eq where 'staging) "Staging" "Today")))
-    (if (> n my/gtd-core-limit)
-        (message "⚠ %s Core: %d open (limit %d) — demote to Secondary or cut"
-                 label n my/gtd-core-limit)
-      (message "%s Core: %d / %d open"
-               label n my/gtd-core-limit))
-    n))
+    (message "%s stats: %s | Core open: %d/%d"
+             label
+             (mapconcat (lambda (r) (format "%s %d/%d" (nth 0 r) (nth 1 r) (nth 2 r))) stats "  ")
+             core-open my/gtd-core-limit)
+    (when (and (eq where 'today) (> core-open my/gtd-core-limit))
+      (message "⚠ %s Core open %d > limit %d — demote or cut" label core-open my/gtd-core-limit))
+    core-open))
 
 (defun my/gtd-warn-core-if-needed ()
   "After capture into Core/today, warn when over `my/gtd-core-limit'."
@@ -258,7 +361,7 @@ With prefix arg, prompt for a date in that week."
         (save-buffer)))
     (my/gtd-warn-core-if-needed)))
 
-;;;; Capture entry points
+;;;; Capture entry points (rich prompts)
 
 (defun my/gtd--capture (where category)
   "Run org-capture template \"gt\" with WHERE and CATEGORY preselected."
@@ -266,14 +369,31 @@ With prefix arg, prompt for a date in that week."
         (my/gtd--capture-category category))
     (org-capture nil "gt")))
 
+(defun my/gtd--where-prompt (default)
+  "Completing-read with Core counts shown for Today and Staging."
+  (let* ((today-lab (my/gtd-format-where-label "Today" 'today))
+         (stag-lab  (my/gtd-format-where-label "Staging" 'staging))
+         (choices (list today-lab stag-lab))
+         (sel (completing-read "Where: " choices nil t nil nil default)))
+    (cond ((string-prefix-p "Today" sel) 'today)
+          ((string-prefix-p "Staging" sel) 'staging)
+          (t 'today))))
+
+(defun my/gtd--cat-prompt (where default)
+  "Completing-read categories with (done/total) + Core focus colors."
+  (let* ((cats (mapcar (lambda (c) (my/gtd-format-cat-label c where)) my/gtd-categories))
+         (sel (completing-read (format "Category (%s): " (if (eq where 'staging) "Staging" "Today"))
+                               cats nil t nil nil default))
+         ;; strip the (d/t) suffix and face property to get raw category
+         (raw (replace-regexp-in-string " ?([^)]+)" "" sel)))
+    raw))
+
 ;;;###autoload
 (defun my/gtd-capture-task ()
-  "Prompt for Today/Staging and Core/Secondary/Unplanned, then capture."
+  "Prompt for Today/Staging (with Core counts) then category (with counts + colors)."
   (interactive)
-  (let* ((where-choice
-          (completing-read "Where: " '("Today" "Staging") nil t nil nil "Today"))
-         (cat (completing-read "Category: " my/gtd-categories nil t nil nil "Core"))
-         (where (if (string= where-choice "Staging") 'staging 'today)))
+  (let* ((where (my/gtd--where-prompt "Today"))
+         (cat (my/gtd--cat-prompt where "Core")))
     (my/gtd--capture where cat)))
 
 ;;;###autoload
@@ -314,74 +434,94 @@ With prefix arg, prompt for a date in that week."
 
 ;;;; Org-capture template list (merged by config)
 
+(defun my/gtd--capture-desc (prefix where cat)
+  "Build a description string like \"Core today (2/5)\".
+Safe: does not create the week file."
+  (let* ((stats (my/gtd-section-stats where t))
+         (row (cl-find cat stats :key #'car :test #'string=))
+         (done (or (nth 1 row) 0))
+         (tot (or (nth 2 row) 0))
+         (loc (if (eq where 'staging) "staging" "today")))
+    (format "%s %s (%d/%d)" prefix loc done tot)))
+
 (defun my/gtd-org-capture-templates ()
-  "Return GTD-related `org-capture-templates' entries."
-  '(("g" "GTD weekly")
-    ("gt" "GTD task (preselected where/category)" entry
-     (file+function my/gtd-path-to-new-or-existing my/gtd-capture-find-target)
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gc" "GTD Core → today" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'today
-                            my/gtd--capture-category "Core")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gs" "GTD Secondary → today" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'today
-                            my/gtd--capture-category "Secondary")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gu" "GTD Unplanned → today" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'today
-                            my/gtd--capture-category "Unplanned")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gC" "GTD Core → staging" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'staging
-                            my/gtd--capture-category "Core")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gS" "GTD Secondary → staging" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'staging
-                            my/gtd--capture-category "Secondary")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)
-    ("gU" "GTD Unplanned → staging" entry
-     (file+function my/gtd-path-to-new-or-existing
-                    (lambda ()
-                      (setq my/gtd--capture-where 'staging
-                            my/gtd--capture-category "Unplanned")
-                      (my/gtd-capture-find-target)))
-     "*** TODO %?\n"
-     :empty-lines 0
-     :after-finalize my/gtd-after-capture)))
+  "Return GTD-related `org-capture-templates' entries with live counts in descriptions."
+  (let ((today-core (my/gtd--capture-desc "Core" 'today "Core"))
+        (today-sec  (my/gtd--capture-desc "Secondary" 'today "Secondary"))
+        (today-unp  (my/gtd--capture-desc "Unplanned" 'today "Unplanned"))
+        (stag-core  (my/gtd--capture-desc "Core" 'staging "Core"))
+        (stag-sec   (my/gtd--capture-desc "Secondary" 'staging "Secondary"))
+        (stag-unp   (my/gtd--capture-desc "Unplanned" 'staging "Unplanned")))
+    `(("g" "GTD weekly")
+      ("gt" "GTD task (prompt with counts)" entry
+       (file+function my/gtd-path-to-new-or-existing my/gtd-capture-find-target)
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gc" ,today-core entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'today my/gtd--capture-category "Core")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gs" ,today-sec entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'today my/gtd--capture-category "Secondary")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gu" ,today-unp entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'today my/gtd--capture-category "Unplanned")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gC" ,stag-core entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'staging my/gtd--capture-category "Core")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gS" ,stag-sec entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'staging my/gtd--capture-category "Secondary")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture)
+      ("gU" ,stag-unp entry
+       (file+function my/gtd-path-to-new-or-existing
+                      (lambda () (setq my/gtd--capture-where 'staging my/gtd--capture-category "Unplanned")
+                              (my/gtd-capture-find-target)))
+       "*** TODO %?\n" :empty-lines 0 :after-finalize my/gtd-after-capture))))
 
 ;;;###autoload
 (defun my/gtd-insert-week-template ()
   "Insert a full Sat–Fri + Staging week body at point (for tempel/yasnippet parity)."
   (interactive)
   (insert (my/gtd-week-body (my/gtd-week-start))))
+
+;;;; Dynamic template refresh so org-capture menu shows live counts
+
+(defun my/gtd-refresh-capture-templates ()
+  "Rebuild GTD capture templates with current done/total counts.
+Call this before showing the GTD capture menu."
+  (let* ((base (cl-remove-if
+                (lambda (tpl)
+                  (and (listp tpl) (stringp (car tpl))
+                       (string-prefix-p "g" (car tpl))))
+                org-capture-templates))
+         (fresh (my/gtd-org-capture-templates)))
+    (setq org-capture-templates (append base fresh))))
+
+(defun my/gtd-org-capture (&optional keys)
+  "Like org-capture but ensures GTD submenu has fresh counts."
+  (interactive)
+  (my/gtd-refresh-capture-templates)
+  (org-capture nil keys))
+
+;; Make sure even the normal C-c c g path shows live counts
+(advice-add 'org-capture :before
+            (lambda (&rest _)
+              (when (and (boundp 'org-capture-templates)
+                       (fboundp 'my/gtd-refresh-capture-templates))
+                ;; Only refresh if the GTD "g" submenu exists
+                (when (cl-find-if (lambda (x) (and (listp x) (equal (car x) "g")))
+                                  org-capture-templates)
+                  (my/gtd-refresh-capture-templates))))
+            '((name . gtd-live-counts)))
 
 (provide 'gtd-weekly)
 ;;; gtd-weekly.el ends here
