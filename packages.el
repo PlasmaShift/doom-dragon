@@ -125,5 +125,11 @@
 (package! acp)
 (package! agent-shell)
 (package! pi-coding-agent)
+(package! fj
+  :recipe (:host codeberg :repo "martianh/fj.el"))
+(package! fedi
+  :recipe (:host codeberg :repo "martianh/fedi.el"))
+(package! tp
+  :recipe (:host codeberg :repo "martianh/tp.el"))
 ;; (package! elfeed)
 ;; (package! cockoo-search)

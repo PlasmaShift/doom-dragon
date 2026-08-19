@@ -195,6 +195,30 @@ If region is active, indents the region. Otherwise indents last paste."
   :config
   (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t))
 
+
+;; Local Forgejo (aneksajo) — Magit Forge + fj.el
+(after! forge
+  (add-to-list 'forge-alist
+               '("dragondesktop.wyvern-salak.ts.net"
+                 "dragondesktop.wyvern-salak.ts.net/git/api/v1"
+                 "dragondesktop.wyvern-salak.ts.net"
+                 forge-gitea-repository)))
+
+(use-package! fj
+  :commands (fj-list-own-repos fj-list-issues fj-list-own-issues
+             fj-create-issue fj-create-token)
+  :init
+  (setq fj-host "https://dragondesktop.wyvern-salak.ts.net/git"
+        fj-user "VoidDragon")
+  :config
+  (map! :leader
+        (:prefix ("g j" . "fj / Forgejo")
+         :desc "Own repos" "r" #'fj-list-own-repos
+         :desc "Repo issues" "i" #'fj-list-issues
+         :desc "Own issues" "I" #'fj-list-own-issues
+         :desc "Create issue" "c" #'fj-create-issue
+         :desc "Create API token" "t" #'fj-create-token)))
+
 ;; Raku: no Doom +lsp flag — register navigator and auto-start eglot.
 (after! eglot
   (add-to-list 'eglot-server-programs '(raku-mode . ("raku-navigator")))
