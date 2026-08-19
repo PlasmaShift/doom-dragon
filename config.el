@@ -195,6 +195,26 @@ If region is active, indents the region. Otherwise indents last paste."
   :config
   (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t))
 
+;; Raku: no Doom +lsp flag — register navigator and auto-start eglot.
+(after! eglot
+  (add-to-list 'eglot-server-programs '(raku-mode . ("raku-navigator")))
+  (add-hook 'raku-mode-local-vars-hook #'eglot-ensure))
+
+;; Live Emacs for external agents (Grok/Pi/T3) via Unix socket + socat.
+;; eval-elisp can run arbitrary Lisp — treat connected clients as trusted.
+(use-package! mcp-server
+  :defer t
+  :init
+  (setq mcp-server-socket-directory (expand-file-name "~/.config/emacs-mcp/"))
+  :config
+  (make-directory mcp-server-socket-directory t))
+(add-hook! 'doom-after-init-hook :append
+  (defun my/mcp-server-start ()
+    (require 'mcp-server)
+    (make-directory mcp-server-socket-directory t)
+    (unless (mcp-server--transport-alive-p)
+      (mcp-server-start-unix))))
+
 ;; (use-package! denote
 ;;   :demand t
 ;;   :custom
@@ -257,6 +277,16 @@ If region is active, indents the region. Otherwise indents last paste."
     (setopt my/gtd-directory (expand-file-name "c:/Users/Plasma/denote/gtd")))
    (t (setopt my/gtd-directory (expand-file-name "~/doc/denote/gtd"))))
   (my/gtd-ensure-directory))
+
+;; Firefox → floating web-clip dispatch (org-protocol templates w/p/L)
+(load! "lisp/web-clip")
+(after! org-protocol
+  (my/web-clip-install-protocol))
+;; Also install once org loads (Doom lazy-loads org-protocol on first URL)
+(after! org
+  (with-eval-after-load 'org-protocol
+    (my/web-clip-install-protocol)))
+
 
 ;; Tempel (compare with Doom's built-in yasnippet under snippets/)
 (use-package! tempel

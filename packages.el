@@ -117,6 +117,9 @@
 ;; (package! tramp-rpc :recipe (:host github :repo “ArthurHeymans/emacs-tramp-rpc”))
 ;; (package! piem)
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
+(package! mcp-server
+  :recipe (:host github :repo "rhblind/emacs-mcp-server"
+           :files ("*.el" "tools/*.el" "mcp-wrapper.py" "mcp-wrapper.sh")))
 (package! shell-maker)
 (package! acp)
 (package! agent-shell)
