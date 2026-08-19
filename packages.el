@@ -119,7 +119,8 @@
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
 (package! mcp-server
   :recipe (:host github :repo "rhblind/emacs-mcp-server"
-           :files ("*.el" "tools/*.el" "mcp-wrapper.py" "mcp-wrapper.sh")))
+           :files ("*.el" "tools/*.el" "mcp-wrapper.py" "mcp-wrapper.sh"))
+  :pin "a5d749cf9880598f66308545985526fd4460627f")
 (package! shell-maker)
 (package! acp)
 (package! agent-shell)
